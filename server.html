@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Control Panel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+ body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #eaeff2;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0;
+}
+
+/* Header styling */
+.header {
+    background-color: #34495e;
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 26px;
+    letter-spacing: 1px;
+}
+
+/* Status indicator */
+.status-indicator {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            background-color: rgba(255,255,255,0.1);
+            padding: 5px 10px;
+            border-radius: 20px;
+}
+
+.status-dot {
+    height: 12px;
+    width: 12px;
+    background-color: #FF6347; /* Changed to a more reddish tone */
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+
+
+/* Filters section */
+.filters {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.search-input,
+.filter-select {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.search-input {
+    flex-grow: 1;
+}
+
+/* User table styling */
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.user-table th {
+    text-align: left;
+    padding: 15px;
+    background-color: #34495e;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    border-bottom: 2px solid #ddd;
+}
+
+.user-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+}
+
+.user-table tr:hover {
+    background-color: #f9fbfd;
+}
+
+/* User info styling */
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column; /* Updated to position User ID under the Name */
+}
+
+.user-name {
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.user-id {
+    font-size: 12px;
+    color: #999;
+}
+
+/* Status badges */
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-online {
+    background-color: #4CAF50; /* Green for online */
+    color: white;
+}
+
+.status-offline {
+    background-color: #FFCDD2; /* Light red for offline */
+    color: #333;
+}
+
+.status-busy {
+    background-color: #FFC107; /* Yellow for busy */
+    color: #333;
+}
+
+.status-suspended {
+    background-color: #FF5252; /* Red for suspended */
+    color: white;
+}
+
+/* Action buttons */
+.action-btn {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.action-btn:hover {
+    background-color: #2980b9;
+}
+
+.btn-suspend {
+    background-color: #e74c3c;
+    padding: 8px 12px; /* Matches other buttons */
+    font-size: 14px; /* Ensures consistency */
+    border-radius: 4px; /* Matches the style of other buttons */
+    color: white; /* Updates text color to white */
+}
+
+.btn-suspend:hover {
+    background-color: #c0392b;
+    color: white; /* Keeps text color white on hover */
+}
+
+
+.btn-unsuspend {
+    background-color: #2ecc71;
+}
+.btn-unsuspend {
+    background-color: #2ecc71;
+    padding: 8px 12px; /* Matches other buttons */
+    font-size: 14px; /* Ensures consistency */
+    border-radius: 4px; /* Matches the style of other buttons */
+}
+
+.btn-unsuspend:hover {
+    background-color: #27ae60;
+}
+
+/* Pagination */
+.pagination {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.page-btn {
+    padding: 10px 15px;
+    margin: 0 5px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.page-btn.active {
+    background-color: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+/* Footer text */
+.footer-text {
+    text-align: center;
+    color: #999;
+    font-size: 14px;
+    margin-top: 15px;
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header section -->
+        <div class="header">
+            <h1>Admin Control Panel</h1>
+            <div class="status-indicator">
+                <span class="status-dot"></span>
+                <span id="connectionStatus">Disconnected</span>
+            </div>
+        </div>
+        
+        <!-- Filters section -->
+        <div class="filters">
+        <input type="text" class="search-input" id="searchBox" placeholder="Search by name, username, or location...">
+<button onclick="performSearch()">Search</button>
+            <select class="filter-select" id="statusFilter">
+                <option value="all">All Statuses</option>
+                <option value="online">Online</option>
+                <option value="offline">Offline</option>
+                <option value="busy">Busy</option>
+                <option value="suspended">Suspended</option>
+            </select>
+            <select class="filter-select" id="typeFilter">
+                <option value="all">All Types</option>
+                <option value="client">Client</option>
+                <option value="admin">Admin</option>
+                <option value="moderator">Moderator</option>
+            </select>
+        </div>
+        
+        <!-- User table -->
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>User Info</th>
+                    <th>Location</th>
+                    <th>Joined</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody">
+                <!-- User data will be inserted here by JavaScript -->
+            </tbody>
+        </table>
+        
+        <!-- Pagination -->
+        <div class="pagination">
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+        </div>
+        
+        <div class="footer-text">
+            <p>Showing 1 to 5 of 8 users</p>
+        </div>
+    </div>
+
+<script>
+    // Connect to the Socket.IO server
+    const socket = io(''); // Replace with your server address if needed
+    const connectionStatus = document.getElementById('connectionStatus');
+    const userTableBody = document.getElementById('userTableBody');
+
+    // Handle connection events
+    socket.on('connect', () => {
+        connectionStatus.textContent = 'Connected';
+        connectionStatus.classList.remove('disconnected');
+        document.querySelector('.status-dot').style.backgroundColor = '#4CAF50'; // Green
+        console.log('Connected to server');
+
+        // Request user data from the server
+        socket.emit('getAllUsers');
+    });
+
+    socket.on('disconnect', () => {
+        connectionStatus.textContent = 'Disconnected';
+        connectionStatus.classList.add('disconnected');
+        document.querySelector('.status-dot').style.backgroundColor = '#f44336'; // Red
+        console.log('Disconnected from server');
+    });
+
+    // Listen for the initial list of all users
+    socket.on('allUsers', (users) => {
+        console.log('Received initial user data:', users); // Debugging log
+        updateUserTable(users);
+    });
+
+    // Listen for updates for a single user and update their row
+socket.on('updateField', ({ userID, updatedField, newValue }) => {
+    console.log(`Received updated field: ${updatedField} changed to ${newValue} for userID ${userID}`);
+
+    // Find the row corresponding to the userID
+    const userRows = Array.from(userTableBody.querySelectorAll('tr'));
+    const userRow = userRows.find(row => row.querySelector('.user-id')?.textContent === userID);
+
+    if (userRow) {
+        console.log(`Updating field "${updatedField}" for userID ${userID}`);
+
+        // Update only the changed field
+        if (updatedField === 'suspended') {
+            // Update the "Suspend" or "Unsuspend" button
+            const suspendButton = userRow.querySelector('.btn-suspend, .btn-unsuspend');
+            if (suspendButton) {
+                suspendButton.textContent = newValue === 1 ? 'Unsuspend' : 'Suspend';
+                suspendButton.className = newValue === 1 ? 'btn-unsuspend' : 'btn-suspend';
+                suspendButton.setAttribute('onclick', `socket.emit('updateStatus', { userID: '${userID}', newStatus: '${newValue === 1 ? 'unsuspend' : 'suspend'}' })`);
+            }
+
+            // Update the "Suspended" badge
+            const suspendedBadge = userRow.querySelector('.status-badge.status-suspended');
+            if (newValue === 1) {
+                if (!suspendedBadge) {
+                    const badge = document.createElement('span');
+                    badge.className = 'status-badge status-suspended';
+                    badge.textContent = 'Suspended';
+                    userRow.querySelector('td:nth-child(4)').appendChild(badge);
+                }
+            } else if (suspendedBadge) {
+                suspendedBadge.remove();
+            }
+        } else if (updatedField === 'status') {
+            // Update the status badge
+            const statusBadge = userRow.querySelector('.status-badge');
+            if (statusBadge) {
+                statusBadge.textContent = newValue;
+                statusBadge.className = `status-badge status-${newValue}`;
+            }
+        }
+    } else {
+        console.log('User row not found. No update applied.');
+    }
+});
+
+
+    // Function to format dates (utility)
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const formattedDate = date.toLocaleString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true
+        });
+        return formattedDate.replace(", ", " ");
+    }
+
+    // Function to populate the user table dynamically
+    function updateUserTable(users) {
+        userTableBody.innerHTML = ''; // Clear existing table rows
+
+        if (!users || users.length === 0) {
+            console.log('No users to display.');
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="5">No users found</td>';
+            userTableBody.appendChild(row);
+            return;
+        }
+
+        // Iterate through the user list and create table rows
+        users.forEach((user) => {
+            console.log('Adding user to table:', user); // Debugging log
+            const statusBadge = user.status === 'busy'
+                ? `<span class="status-badge status-busy">Busy</span>`
+                : user.status === 'offline'
+                ? `<span class="status-badge status-offline">Offline</span>`
+                : `<span class="status-badge status-online">${user.status}</span>`;
+
+            const suspendedBadge = user.suspended 
+                ? `<span class="status-badge status-suspended">Suspended</span>` 
+                : '';
+
+            const actionButtons = `
+                <button onclick="socket.emit('updateStatus', { userID: '${user.userID}', newStatus: 'online' })" class="action-btn">Online</button>
+                <button onclick="socket.emit('updateStatus', { userID: '${user.userID}', newStatus: 'offline' })" class="action-btn">Offline</button>
+                <button onclick="socket.emit('updateStatus', { userID: '${user.userID}', newStatus: 'busy' })" class="action-btn">Busy</button>
+                <button onclick="socket.emit('updateStatus', { userID: '${user.userID}', newStatus: '${user.suspended ? 'unsuspend' : 'suspend'}' })" class="${user.suspended ? 'btn-unsuspend' : 'btn-suspend'}">
+                    ${user.suspended ? 'Unsuspend' : 'Suspend'}
+                </button>
+            `;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <div class="user-info">
+                        <img src="https://picsum.photos/40?random=${Math.floor(Math.random() * 1000)}" alt="${user.username || 'User'}" class="user-avatar">
+                        <div class="user-details">
+                            <span class="user-name">${user.username || 'Anonymous'}</span>
+                            <span class="user-id">${user.userID || 'N/A'}</span>
+                        </div>
+                    </div>
+                </td>
+                <td>${user.location || 'Unknown'}</td>
+                <td>${formatDate(user.created)}</td>
+                <td>${statusBadge} ${suspendedBadge}</td>
+                <td>${actionButtons}</td>
+            `;
+            userTableBody.appendChild(row); // Add the row to the table body
+        });
+    }
+</script>
+
+
+
+</body>
+</html>
