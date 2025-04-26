@@ -16,7 +16,7 @@ const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3006;
 const POOL_CONFIG = {
   host: process.env.DB_HOST || 'uberfnew:us-central1:uberfdatabase',
-  user: process.env.DB_USER || 'root',
+  user: process.env.DB_USER || 'uberf',
   password: process.env.DB_PASSWORD || 'Caitlin69!!!',
   database: process.env.DB_NAME || 'uberf',
   waitForConnections: true,
