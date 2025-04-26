@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3006;
 const POOL_CONFIG = {
   host: process.env.DB_HOST || 'uberfnew:us-central1:uberf',
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || 'Caitlin69!!!',
+  password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'uberf',
   waitForConnections: true,
   connectionLimit: 10,
